@@ -121,7 +121,7 @@ def NostalgiaChoice(title):
     this_year = int(Datetime.Now().year)
     first_year = this_year - 100
     
-    for year in reversed(range(first_year, this_year + 1)):
+    for year in reversed(range(first_year, this_year + 1 - 10)):
         title = unicode('Födelseår: ') + str(year)
         
         oc.add(
