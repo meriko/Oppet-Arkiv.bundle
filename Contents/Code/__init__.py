@@ -26,12 +26,21 @@ def MainMenu():
     oc = ObjectContainer()
     element = HTML.ElementFromURL(BASE_URL + '/?embed=true')
 
-    for item in element.xpath("//*[contains(@class, 'video-list')]"):
-        title = unicode(item.xpath(".//h1/text()")[0].strip())
+    list_xpath = "//*[contains(@class, 'video-list')]"
+    title_xpath = ".//h1/text()"
+    
+    for item in element.xpath(list_xpath):
+        title = unicode(item.xpath(title_xpath)[0].strip())
         
         oc.add(
             DirectoryObject(
-                key = Callback(MainPrograms, title_id = title, url = BASE_URL),
+                key = Callback(
+                    MainPrograms,
+                    title_id = title,
+                    url = BASE_URL,
+                    list_xpath = list_xpath,
+                    title_xpath = title_xpath
+                ),
                 title = title
             )
         )
@@ -40,6 +49,14 @@ def MainMenu():
     oc.add(
         DirectoryObject(
             key = Callback(Categories, title = title),
+            title = title
+        )
+    )
+    
+    title = 'Nostalgitrippen'
+    oc.add(
+        DirectoryObject(
+            key = Callback(NostalgiaChoice, title = title),
             title = title
         )
     )
@@ -95,17 +112,74 @@ def Search(query):
         return ObjectContainer(header=unicode("Resultat"), message=unicode("Kunde inte hitta något för: ") + unicode(query))
 
     return oc
+
+####################################################################################################
+@route(PREFIX + '/nostalgiachoice')
+def NostalgiaChoice(title):
+    oc = ObjectContainer(title2=unicode(title))
+
+    this_year = int(Datetime.Now().year)
+    first_year = this_year - 100
+    
+    for year in reversed(range(first_year, this_year + 1)):
+        title = unicode('Födelseår: ') + str(year)
         
+        oc.add(
+            DirectoryObject(
+                key = Callback(Nostalgia, title = title, url = BASE_URL + '/nostalgi/%s' % year),
+                title = title
+            )
+        )
+        
+    return oc
+
+####################################################################################################
+@route(PREFIX + '/nostalgia')
+def Nostalgia(title, url):
+
+    oc = ObjectContainer(title2=unicode(title))
+    element = HTML.ElementFromURL(url)
+
+    for video in element.xpath(".//*[contains(@href, '/video/')]"):
+        url = BASE_URL + video.xpath("./@href")[0].strip()
+        title = unicode(video.xpath("./@title")[0].strip())
+        thumb_list = element.xpath("//img[@alt='" + title + "']/@srcset")[0]
+        thumb = thumb_list.split(",")[-1].strip().split(" ")[0]
+        
+        if thumb.startswith("//"):
+            thumb = 'http:' + thumb
+        
+        if '-avsnitt-' in url:
+            slug, url = GetSlugAndURL(title, url)
+            
+            oc.add(
+                DirectoryObject(
+                    key = Callback(ProgramVideos, url = url, title = title, slug = slug),
+                    title = title,
+                    thumb = thumb
+                )
+            )
+        else:
+            oc.add(
+                VideoClipObject(
+                    url = url,
+                    title = title,
+                    thumb = thumb
+                )
+            )
+        
+    return oc
+
 ####################################################################################################
 @route(PREFIX + '/mainprograms')
-def MainPrograms(title_id, url):
+def MainPrograms(title_id, url, list_xpath, title_xpath):
 
     oc = ObjectContainer(title2=unicode(title_id))
-    element = HTML.ElementFromURL(BASE_URL)
+    element = HTML.ElementFromURL(url)
 
-    for item in element.xpath("//*[contains(@class, 'video-list')]"):
+    for item in element.xpath():
         try:
-            if not (title_id == unicode(item.xpath(".//h1/text()")[0].strip())):
+            if not (title_id == unicode(item.xpath()[0].strip())):
                 continue
         except:
             continue
