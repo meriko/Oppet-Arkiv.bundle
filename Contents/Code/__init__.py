@@ -177,9 +177,9 @@ def MainPrograms(title_id, url, list_xpath, title_xpath):
     oc = ObjectContainer(title2=unicode(title_id))
     element = HTML.ElementFromURL(url)
 
-    for item in element.xpath():
+    for item in element.xpath(list_xpath):
         try:
-            if not (title_id == unicode(item.xpath()[0].strip())):
+            if not (title_id == unicode(item.xpath(title_xpath)[0].strip())):
                 continue
         except:
             continue
