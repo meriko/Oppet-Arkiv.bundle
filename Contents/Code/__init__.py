@@ -140,16 +140,20 @@ def Nostalgia(title, url):
     oc = ObjectContainer(title2=unicode(title))
     element = HTML.ElementFromURL(url)
 
-    for video in element.xpath(".//*[contains(@href, '/video/')]"):
-        url = BASE_URL + video.xpath("./@href")[0].strip()
-        title = unicode(video.xpath("./@title")[0].strip())
-        thumb_list = element.xpath("//img[@alt='" + title + "']/@srcset")[0]
+    for video in element.xpath(".//article[contains(@class, 'svtUnit')]"):
+        url = BASE_URL + video.xpath(".//*/@href")[0].strip()
+        
+        if not '/video' in url:
+            continue
+        
+        title = unicode(video.xpath(".//*/@title")[0].strip())
+        thumb_list = video.xpath(".//img/@srcset")[0]
         thumb = thumb_list.split(",")[-1].strip().split(" ")[0]
         
-        if thumb.startswith("//"):
+        if thumb.startswith('//'):
             thumb = 'http:' + thumb
-        
-        if '-avsnitt-' in url:
+
+        if '-avsnitt-' in url and not 'avsnitt' in title.lower():
             slug, url = GetSlugAndURL(title, url)
             
             oc.add(
